@@ -9,8 +9,13 @@ import "./App.css";
 const styles ={
   fontSize: '40px',
 }
+
 const styles2 ={
   lineHeight: '1.5em',
+}
+
+const styles3 ={
+  color: 'red',
 }
 class App extends Component {
   constructor(props){
@@ -118,15 +123,12 @@ class App extends Component {
     await this.state.wethContract.methods.approve("0x53C5fd1c6F08D841E5E97240f7C6b6AcF6974e99", "100000000000000000000")
     .send({ from: this.state.accounts})
     .on("receipt", async (receipt)=> {
-        console.log("Approved to send wETH to EMP!");
         this.setState({error: "Approved to send wETH to EMP!"});
         await this.state.tokenContract.methods.create([this.state.web3.utils.toWei(collateral)],[this.state.web3.utils.toWei(tokenAmt)])
         .send({ from: this.state.accounts})
         .on("receipt", async (receipt)=> {
-          console.log("Congratulations you created " + tokenAmt + " tokens");
-          this.setState({error: "Congratulations you created " + tokenAmt + " tokens"});
           await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-            console.log("account " + this.state.accounts +" number of tokens is " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether"));
+            this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " uUSDwETH!"});
           })
         })
         .on("error",  function(error) {
@@ -150,9 +152,8 @@ class App extends Component {
     await this.state.tokenContract.methods.create([this.state.web3.utils.toWei(collateral)],[this.state.web3.utils.toWei(tokenAmt)])
     .send({ from: this.state.accounts})
     .on("receipt", async (receipt)=> {
-      console.log("Congratulations you created " + tokenAmt + " tokens");
       await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-        console.log("account " + this.state.accounts +" number of tokens is " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether"));
+        this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " uUSDwETH!"});
       })
     })
     .on("error",  function(error) {
@@ -200,7 +201,7 @@ class App extends Component {
       <br></br>
       Already approved? <Button variant="contained" color="secondary" onClick={this.handleMintTokens}>Mint Tokens</Button>
       <br></br>
-      {this.state.error}
+      <div style = {styles3}>{this.state.error}</div>
       </div>
     );
   }
