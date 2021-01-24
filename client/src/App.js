@@ -173,7 +173,7 @@ class App extends Component {
   render() {
     return (
       <div className="App" > 
-      <div style ={styles}>Mint your own uUSDwETH!</div>
+      <div style ={styles}>Mint your own uUSDwETH!!</div>
       <br></br>
       <br></br>
       <div style = {styles2}>
