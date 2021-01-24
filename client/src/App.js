@@ -44,7 +44,7 @@ class App extends Component {
       const web3 = await getWeb3();
       const instance = new web3.eth.Contract(
         Token.abi,
-        '0x53C5fd1c6F08D841E5E97240f7C6b6AcF6974e99',
+        '0xf3371032B682bC37200056a0e2F4E13717Ad5D95',
       );
 
       const instance2 = new web3.eth.Contract(
@@ -120,7 +120,7 @@ class App extends Component {
       this.setState({error: "too little collateral"})
     } else {
       this.setState({error: ""})
-    await this.state.wethContract.methods.approve("0x53C5fd1c6F08D841E5E97240f7C6b6AcF6974e99", "100000000000000000000")
+    await this.state.wethContract.methods.approve("0xf3371032B682bC37200056a0e2F4E13717Ad5D95", "100000000000000000000")
     .send({ from: this.state.accounts})
     .on("receipt", async (receipt)=> {
         this.setState({error: "Approved to send wETH to EMP!"});
@@ -128,7 +128,7 @@ class App extends Component {
         .send({ from: this.state.accounts})
         .on("receipt", async (receipt)=> {
           await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-            this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " uUSDwETH!"});
+            this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " u1INCHwETH!"});
           })
         })
         .on("error",  function(error) {
@@ -153,7 +153,7 @@ class App extends Component {
     .send({ from: this.state.accounts})
     .on("receipt", async (receipt)=> {
       await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-        this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " uUSDwETH!"});
+        this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " u1INCHwETH!"});
       })
     })
     .on("error",  function(error) {
@@ -181,7 +181,7 @@ class App extends Component {
   render() {
     return (
       <div className="App" > 
-      <div style ={styles}>Mint your own uUSDwETH!!</div>
+      <div style ={styles}>Mint your own u1INCHwETH!!</div>
       <br></br>
       <br></br>
       <div style = {styles2}>
