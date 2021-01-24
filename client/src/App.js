@@ -92,7 +92,12 @@ class App extends Component {
     this.setState({GCR: a*b/c});
     this.setState({minimumTokens: d});
     this.setState({tokenBalance: e});
-
+    setInterval(async () => {
+      await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
+        e = web3.utils.fromWei(cc.tokensOutstanding[0], "ether");
+      })
+      this.setState({tokenBalance: e});
+    }, 1000);
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -113,11 +118,13 @@ class App extends Component {
     await this.state.wethContract.methods.approve("0x53C5fd1c6F08D841E5E97240f7C6b6AcF6974e99", "100000000000000000000")
     .send({ from: this.state.accounts})
     .on("receipt", async (receipt)=> {
-        console.log("Approved to send wETH to EMP");
+        console.log("Approved to send wETH to EMP!");
+        this.setState({error: "Approved to send wETH to EMP!"});
         await this.state.tokenContract.methods.create([this.state.web3.utils.toWei(collateral)],[this.state.web3.utils.toWei(tokenAmt)])
         .send({ from: this.state.accounts})
         .on("receipt", async (receipt)=> {
           console.log("Congratulations you created " + tokenAmt + " tokens");
+          this.setState({error: "Congratulations you created " + tokenAmt + " tokens"});
           await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
             console.log("account " + this.state.accounts +" number of tokens is " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether"));
           })
