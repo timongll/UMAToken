@@ -11,7 +11,7 @@ const styles ={
 }
 
 const styles2 ={
-  lineHeight: '2em',
+  lineHeight: '2.5em',
 }
 
 const styles3 ={
@@ -212,7 +212,7 @@ class App extends Component {
       Dont have wETH? buy some here with ETH: <Input type="number" placeholder= "0" onChange={this.handleWETHChange} />
       <Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Buy WETH</Button>
       <br></br>
-      </div>
+
       Token amount to mint: <Input type="number" placeholder="100" onChange={this.handleNumTokenChange} />
       <br></br>
       wETH amount as collateral: <Input type="number" placeholder= {(this.state.numTokens* this.state.GCR)} onChange={this.handleNumCChange} />
@@ -222,6 +222,7 @@ class App extends Component {
       Already approved? <Button variant="contained" color="secondary" onClick={this.handleMintTokens}>Mint Tokens</Button>
       <br></br>
       <div style = {styles3}>{this.state.error}</div>
+      </div>
       </div>
     );
   }
