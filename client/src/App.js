@@ -11,7 +11,7 @@ const styles ={
 }
 
 const styles2 ={
-  lineHeight: '1.5em',
+  lineHeight: '2em',
 }
 
 const styles3 ={
