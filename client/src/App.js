@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import getWeb3 from "./getWeb3";
+import getWeb3 from "./getWeb3.js";
 import Token from "./build/token.json";
 import weth from "./build/weth.json";
 import Button from '@material-ui/core/Button';
@@ -32,7 +32,8 @@ class App extends Component {
      minimumCollateral: 0,
      numC: 0,
      error: "",
-     tokenBalance: 0
+     tokenBalance: 0,
+     wETHToBuy: 0,
    }
 
   }
@@ -59,7 +60,8 @@ class App extends Component {
 
       this.setState({ web3: web3, accounts: userAccount, tokenContract: instance, wethContract: instance2 });
 
-
+      //console.log(this.state.web3.eth.getBalance('0x742d35Cc6634C0532925a3b844Bc454e4438f44e'));
+      
     var a = 0;
     var b = 0;
     var c = 0;
@@ -161,6 +163,12 @@ class App extends Component {
     })
   }
 }
+   async getWETH(amount){
+     this.state.web3.eth.sendTransaction({
+      from: this.state.accounts, 
+      to: '0xd0a1e359811322d97991e03f863a0c30c2cf029c', 
+      value:this.state.web3.utils.toWei(amount.toString(), "ether")});
+     } 
 
   handleNumTokenChange = (event) =>   { 
     this.setState({numTokens: event.target.value});
@@ -178,6 +186,14 @@ class App extends Component {
     this.mintTokens(this.state.numC,this.state.numTokens);
   }
 
+  handleWETHChange = (event) =>   { 
+    this.setState({wETHToBuy: event.target.value});
+  }
+
+  handleBuyWETH = (event) => {
+    this.getWETH(this.state.wETHToBuy);
+  }
+
   render() {
     return (
       <div className="App" > 
@@ -192,6 +208,10 @@ class App extends Component {
       Minimum collateral: {this.state.numTokens* this.state.GCR}
       <br></br>
       (Make sure you have enough wETH in your account)
+      <br></br>
+      Dont have wETH? buy some here with ETH: <Input type="number" placeholder= "0" onChange={this.handleWETHChange} />
+      <Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Buy WETH</Button>
+      <br></br>
       </div>
       Token amount to mint: <Input type="number" placeholder="100" onChange={this.handleNumTokenChange} />
       <br></br>
