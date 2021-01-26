@@ -57,7 +57,7 @@ const styles ={
 }
 
 const styles2 ={
-  lineHeight: '2.2em',
+  lineHeight: '2em',
 }
 
 const styles3 ={
