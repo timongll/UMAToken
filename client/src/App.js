@@ -8,9 +8,9 @@ import Button from '@material-ui/core/Button';
 import Input from '@material-ui/core/Input';
 import "./App.css";
 
-import { ChainId, Token, Percent, Fetcher, TokenAmount, Route, Trade, TradeType} from '@uniswap/sdk'
+//import { ChainId, Token, Percent, Fetcher, TokenAmount, Route, Trade, TradeType} from '@uniswap/sdk'
 
-const oneinch = new Token(ChainId.KOVAN, 
+/*const oneinch = new Token(ChainId.KOVAN, 
   '0x32b5f743d06b54a645f351dac79270ce74acc7af', 
   18, 
   )
@@ -22,7 +22,7 @@ const weeth = new Token(ChainId.KOVAN,
   18, 
   )
 
-
+*/
 //0x32B5F743D06B54A645f351DAC79270Ce74aCc7af
 
 const tokenContract = "0xf3371032B682bC37200056a0e2F4E13717Ad5D95";
@@ -77,11 +77,11 @@ class App extends Component {
 
           
       //const pair = Pair.getAddress(oneinch, WETH[oneinch.chainId]);
-      var pair = await Fetcher.fetchPairData(weeth, oneinch);
+     /* var pair = await Fetcher.fetchPairData(weeth, oneinch);
       console.log(pair);
       const route = new Route([pair], weeth);
       const trade = new Trade(route, new TokenAmount(weeth, '10000000000000000'), TradeType.EXACT_INPUT);
-
+*/
       const instance2 = new web3.eth.Contract(
         weth.abi,
         wethContract,
@@ -113,11 +113,6 @@ class App extends Component {
       var minSponsorTokens = 0;
       var numberTokens = 0;
 
-      const path = [ weeth.address,oneinch.address];
-      const to = this.state.accounts; // should be a checksummed recipient address
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
-      console.log(deadline);
-      const valueToEth = 0;// // needs to be converted to e.g. hex
 
 
     //cumulativeFeeMultiplier = 1
@@ -215,7 +210,7 @@ class App extends Component {
     }
   }
 
-  async longTokens(value){
+  /*async longTokens(value){
     const path = [ weeth.address,oneinch.address];
     const to = this.state.accounts; // should be a checksummed recipient address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
@@ -248,6 +243,7 @@ class App extends Component {
     })
     }
   }
+  */
 
   async getWETH(amount){
     this.state.web3.eth.sendTransaction({
