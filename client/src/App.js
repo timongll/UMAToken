@@ -364,16 +364,16 @@ class App extends Component {
   render() {
     return (
       <div className="App" > 
-      <div style ={styles}>Mint your own u1INCHwETH! </div>
+      <div style ={styles}>Mint your own synthetic 1inch! </div>
       (Expires 01/01/2022 00:00 UTC)
       <br></br>
       <br></br>
       <div style = {styles2}>
-      Total u1INCHwETH balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
+      Total u1inch balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
       <br></br>
-      Metamask u1INCHwETH balance: {parseFloat(this.state.metamaskBalance).toFixed(2)}
+      Metamask u1inch balance: {parseFloat(this.state.metamaskBalance).toFixed(2)}
       &nbsp;&nbsp;&nbsp;
-      u1INCHwETH shorted: {parseFloat(this.state.shortAmount).toFixed(2)}
+      liquidity added: {parseFloat(this.state.shortAmount).toFixed(2)}
       <br></br>
       <br></br>
       <text style={{fontWeight: "bold"}}>Make sure you have enough wETH in your account</text>
@@ -384,7 +384,7 @@ class App extends Component {
       &nbsp;<Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Mint WETH</Button>
       <br></br>
       <br></br>
-      <text style={{fontWeight: "bold"}}>Mint u1INCHwETH</text>
+      <text style={{fontWeight: "bold"}}>Mint u1inch</text>
       <br></br>
       Minimum tokens mintable: {this.state.minimumTokens}
       &nbsp;&nbsp;&nbsp;
@@ -406,18 +406,18 @@ class App extends Component {
       Amount of u1INCHwETH you will get: {this.state.estimate}
       <br></br>
     */}
-      <text style={{fontWeight: "bold"}}>Head to Uniswap to short and long u1INCHwETH!</text>
+      <text style={{fontWeight: "bold"}}>Head to Uniswap to short and long u1inch!</text>
       <br></br>
-      <Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>SHORT: Add liquidity</Button> 
-      &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>LONG: swap tokens for u1INCHwETH</Button>
+      <Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>Add liquidity</Button> 
+      &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>SHORT or LONG: swap u1inch with other tokens</Button>
       <br></br>
-      Total ETH-u1INCHwETH supply: {parseFloat(this.state.supply).toFixed(2)}
+      Total u1inch supply: {parseFloat(this.state.supply).toFixed(2)}
       <br></br>
       <br></br>
       <CopyToClipboard text={wethContract} onCopy={this.onCopy} >
       <Button variant="contained" color="secondary" onClick={this.handleClick}>copy wETH address</Button>
         </CopyToClipboard> <CopyToClipboard text={oneinchContract} onCopy={this.onCopy}>
-        <Button variant="contained" color="secondary" onClick={this.handleClick}>copy u1INCHwETH address</Button>
+        <Button variant="contained" color="secondary" onClick={this.handleClick}>copy u1inch address</Button>
         </CopyToClipboard>
         <div style = {styles3}>{this.state.error}</div>
       </div>
