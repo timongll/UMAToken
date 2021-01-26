@@ -313,7 +313,7 @@ class App extends Component {
       <CopyToClipboard text={wethContract} onCopy={this.onCopy}>
       <Button variant="contained" color="secondary" >copy wETH address</Button>
         </CopyToClipboard> <CopyToClipboard text={oneinchContract} onCopy={this.onCopy}>
-        <Button variant="contained" color="secondary" >copy u1INCHwUSD address</Button>
+        <Button variant="contained" color="secondary" >copy u1INCHwETH address</Button>
         </CopyToClipboard>
         <br></br>
       Token balance: {this.state.tokenBalance}
