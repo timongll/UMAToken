@@ -3,6 +3,7 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import getWeb3 from "./getWeb3.js";
 import Tokens from "./build/token.json";
 import weth from "./build/weth.json";
+import pair from "./build/pair.json";
 import Uniswap from "./build/uniswap.json"
 import Button from '@material-ui/core/Button';
 import Input from '@material-ui/core/Input';
@@ -29,6 +30,7 @@ const tokenContract = "0xf3371032B682bC37200056a0e2F4E13717Ad5D95";
 const wethContract = "0xd0a1e359811322d97991e03f863a0c30c2cf029c";
 const oneinchContract = "0x32b5f743d06b54a645f351dac79270ce74acc7af";
 const uniswapContract = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+const pairContract = "0x0080a89561F74d4Bb5eC24e12671D3dDB7CE25A1";
 const styles ={
   fontSize: '40px',
 }
@@ -59,7 +61,8 @@ class App extends Component {
      tokenBalance: 0,
      wETHToBuy: 0,
      longAmt: 0,
-     estimate: 0
+     estimate: 0,
+     supply: 0
    }
 
   }
@@ -91,6 +94,11 @@ class App extends Component {
         Uniswap.abi,
         uniswapContract,
       );
+
+      const instance4 = new web3.eth.Contract(
+        pair.abi,
+        pairContract,
+      );
       var userAccount;
 
 
@@ -104,7 +112,8 @@ class App extends Component {
         web3: web3, 
         uniswapContract: instance3,
         tokenContract: instance, 
-        wethContract: instance2
+        wethContract: instance2,
+        pairContract: instance4
       });
       
       var feeMultiplier = 0;
@@ -112,6 +121,7 @@ class App extends Component {
       var tokensOutstanding = 0;
       var minSponsorTokens = 0;
       var numberTokens = 0;
+      var liquidSupply = 0;
 
 
 
@@ -151,6 +161,11 @@ class App extends Component {
           numberTokens = web3.utils.fromWei(cc.tokensOutstanding[0], "ether");
         })
         this.setState({tokenBalance: numberTokens});
+
+        this.state.pairContract.methods.totalSupply().call().then(async cc=>{
+          liquidSupply = web3.utils.fromWei(cc, "ether");
+        })
+        this.setState({supply: liquidSupply});
       }, 1000);
 
     } catch (error) {
@@ -253,6 +268,10 @@ class App extends Component {
      });
   } 
 
+  async getSupply(){
+
+  } 
+
   handleNumTokenChange = (event) =>   { 
     this.setState({numTokens: event.target.value});
   }
@@ -325,6 +344,8 @@ class App extends Component {
     */}
       <Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>SHORT: Add liquidity</Button> 
       &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>LONG: swap tokens for u1INCHwETH</Button>
+      <br></br>
+      Total ETH-u1INCHwETH supply: {this.state.supply}
       <div style = {styles3}>{this.state.error}</div>
       </div>
       </div>
