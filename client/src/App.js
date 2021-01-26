@@ -363,8 +363,10 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App"  > 
-      <div style ={styles}>Mint your own u1INCHwETH!</div>
+      <div className="App" > 
+      <div style ={styles}>Mint your own u1INCHwETH! </div>
+      (Expires 01/01/2022 00:00 UTC)
+      <br></br>
       <br></br>
       <div style = {styles2}>
       Total u1INCHwETH balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
