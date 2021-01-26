@@ -31,12 +31,33 @@ const wethContract = "0xd0a1e359811322d97991e03f863a0c30c2cf029c";
 const oneinchContract = "0x32b5f743d06b54a645f351dac79270ce74acc7af";
 const uniswapContract = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const pairContract = "0x0080a89561F74d4Bb5eC24e12671D3dDB7CE25A1";
+
+// The minimum ABI to get ERC20 Token balance
+let minABI = [
+  // balanceOf
+  {
+    "constant":true,
+    "inputs":[{"name":"_owner","type":"address"}],
+    "name":"balanceOf",
+    "outputs":[{"name":"balance","type":"uint256"}],
+    "type":"function"
+  },
+  // decimals
+  {
+    "constant":true,
+    "inputs":[],
+    "name":"decimals",
+    "outputs":[{"name":"","type":"uint8"}],
+    "type":"function"
+  }
+];
+
 const styles ={
   fontSize: '40px',
 }
 
 const styles2 ={
-  lineHeight: '2.5em',
+  lineHeight: '2.2em',
 }
 
 const styles3 ={
@@ -62,7 +83,10 @@ class App extends Component {
      wETHToBuy: 0,
      longAmt: 0,
      estimate: 0,
-     supply: 0
+     supply: 0,
+     metamaskBalance: 0,
+     metamaskWethBalance: 0,
+     shortAmount: 0
    }
 
   }
@@ -76,6 +100,8 @@ class App extends Component {
         Tokens.abi,
         tokenContract,
       );
+
+
 
 
           
@@ -99,6 +125,11 @@ class App extends Component {
         pair.abi,
         pairContract,
       );
+
+      const instance5 = new web3.eth.Contract(
+        minABI,
+        oneinchContract,
+      );
       var userAccount;
 
 
@@ -113,8 +144,12 @@ class App extends Component {
         uniswapContract: instance3,
         tokenContract: instance, 
         wethContract: instance2,
-        pairContract: instance4
+        pairContract: instance4,
+        oneinchContract: instance5
       });
+
+
+      
       
       var feeMultiplier = 0;
       var totalPositionCollateral = 0;
@@ -122,6 +157,8 @@ class App extends Component {
       var minSponsorTokens = 0;
       var numberTokens = 0;
       var liquidSupply = 0;
+      var metaBalance = 0;
+      var metaWethBalance =0;
 
 
 
@@ -166,6 +203,21 @@ class App extends Component {
           liquidSupply = web3.utils.fromWei(cc, "ether");
         })
         this.setState({supply: liquidSupply});
+
+        this.state.oneinchContract.methods.balanceOf(this.state.accounts).call().then(async cfm => {
+          // Get decimals
+            metaBalance = web3.utils.fromWei(cfm, "ether");
+          });
+          this.setState({metamaskBalance: metaBalance});
+
+
+        this.state.wethContract.methods.balanceOf(this.state.accounts).call().then(async cfm => {
+          // Get decimals
+            metaWethBalance = web3.utils.fromWei(cfm, "ether");
+          });
+        this.setState({metamaskWethBalance: metaWethBalance});
+        this.setState({shortAmount: this.state.tokenBalance - this.state.metamaskBalance});
+
       }, 1000);
 
     } catch (error) {
@@ -184,7 +236,7 @@ class App extends Component {
       this.setState({error: "too little collateral"})
     } else {
       this.setState({error: ""})
-      await this.state.wethContract.methods.approve(tokenContract, "100000000000000000000")
+      await this.state.wethContract.methods.approve(tokenContract, "1000000000000000000000000000")
         .send({ from: this.state.accounts})
         .on("receipt", async (receipt)=> {
           this.setState({error: "Approved to send wETH to EMP!"});
@@ -265,7 +317,8 @@ class App extends Component {
      from: this.state.accounts, 
      to: wethContract, 
      value:this.state.web3.utils.toWei(amount.toString(), "ether")
-     });
+     }).on("receipt", async (receipt)=> {
+    })
   } 
 
   async getSupply(){
@@ -304,36 +357,45 @@ class App extends Component {
     this.getWETH(this.state.wETHToBuy);
   }
 
+  handleClick = (event) => {
+    this.setState({error: "copied"});
+  }
+
   render() {
     return (
       <div className="App"  > 
       <div style ={styles}>Mint your own u1INCHwETH!</div>
       <br></br>
       <div style = {styles2}>
-      <CopyToClipboard text={wethContract} onCopy={this.onCopy}>
-      <Button variant="contained" color="secondary" >copy wETH address</Button>
-        </CopyToClipboard> <CopyToClipboard text={oneinchContract} onCopy={this.onCopy}>
-        <Button variant="contained" color="secondary" >copy u1INCHwETH address</Button>
-        </CopyToClipboard>
-        <br></br>
-      Token balance: {this.state.tokenBalance}
+      Total u1INCHwETH balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
+      <br></br>
+      Metamask u1INCHwETH balance: {parseFloat(this.state.metamaskBalance).toFixed(2)}
+      &nbsp;&nbsp;&nbsp;
+      u1INCHwETH shorted: {parseFloat(this.state.shortAmount).toFixed(2)}
+      <br></br>
+      <br></br>
+      <text style={{fontWeight: "bold"}}>Make sure you have enough wETH in your account</text>
+      <br></br>
+      wETH balance: {parseFloat(this.state.metamaskWethBalance).toFixed(2)}
+      <br></br>
+      Dont have wETH? wrap some here with ETH: <Input type="number" placeholder= "0" onChange={this.handleWETHChange} />
+      &nbsp;<Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Mint WETH</Button>
+      <br></br>
+      <br></br>
+      <text style={{fontWeight: "bold"}}>Mint u1INCHwETH</text>
       <br></br>
       Minimum tokens mintable: {this.state.minimumTokens}
-      <br></br>
+      &nbsp;&nbsp;&nbsp;
       Minimum collateral: {this.state.numTokens* this.state.GCR}
       <br></br>
-      (Make sure you have enough wETH in your account)
-      <br></br>
-      Dont have wETH? mint some here with ETH: <Input type="number" placeholder= "0" onChange={this.handleWETHChange} />
-      <Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Mint WETH</Button>
-      <br></br>
       Token amount to mint: <Input type="number"  placeholder="100" onChange={this.handleNumTokenChange} />
-      <br></br>
+      &nbsp;&nbsp;&nbsp;
       wETH amount as collateral: <Input type="number" placeholder= {(this.state.numTokens* this.state.GCR)} onChange={this.handleNumCChange} />
       <br></br>
       Approve wETH and mint tokens:  <Button variant="contained" color="secondary" onClick={this.handleApproveAndMintTokens}>Approve wETH and Mint Tokens</Button>
-      <br></br>
+      &nbsp;&nbsp;&nbsp;
       Already approved? <Button variant="contained" color="secondary" onClick={this.handleMintTokens}>Mint Tokens</Button>
+      <br></br>
       <br></br>
       {/*}
        Use ETH to Long u1INCHwETH on Uniswap: <Input type="number" placeholder= "0"   onChange={this.handleLongChange}/>
@@ -342,13 +404,23 @@ class App extends Component {
       Amount of u1INCHwETH you will get: {this.state.estimate}
       <br></br>
     */}
+      <text style={{fontWeight: "bold"}}>Head to Uniswap to short and long u1INCHwETH!</text>
+      <br></br>
       <Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>SHORT: Add liquidity</Button> 
       &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>LONG: swap tokens for u1INCHwETH</Button>
       <br></br>
-      Total ETH-u1INCHwETH supply: {this.state.supply}
-      <div style = {styles3}>{this.state.error}</div>
+      Total ETH-u1INCHwETH supply: {parseFloat(this.state.supply).toFixed(2)}
+      <br></br>
+      <br></br>
+      <CopyToClipboard text={wethContract} onCopy={this.onCopy} >
+      <Button variant="contained" color="secondary" onClick={this.handleClick}>copy wETH address</Button>
+        </CopyToClipboard> <CopyToClipboard text={oneinchContract} onCopy={this.onCopy}>
+        <Button variant="contained" color="secondary" onClick={this.handleClick}>copy u1INCHwETH address</Button>
+        </CopyToClipboard>
+        <div style = {styles3}>{this.state.error}</div>
       </div>
       </div>
+      
     );
   }
 }
