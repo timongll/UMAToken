@@ -291,7 +291,7 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App" > 
+      <div className="App"  > 
       <div style ={styles}>Mint your own u1INCHwETH!!</div>
       <br></br>
       <br></br>
