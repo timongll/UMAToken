@@ -98,7 +98,8 @@ class App extends Component {
      currEthOneInchRatio: 0,
      tokensMinted: 0,
      collateralPosition: 0,
-     minCollateral: 0
+     minCollateral: 0,
+     uniswapRatio: 0
    }
 
   }
@@ -164,7 +165,7 @@ class App extends Component {
       });
 
 
-    
+
 
       
       var feeMultiplier = 0;
@@ -176,6 +177,7 @@ class App extends Component {
       var metaBalance = 0;
       var metaWethBalance =0;
       var collateralRequirement = 0;
+      var uniswapRatio = 0;
       
 
 
@@ -238,6 +240,12 @@ class App extends Component {
           await this.state.tokenContract.methods.collateralRequirement().call().then(async tto=>{
             collateralRequirement = web3.utils.fromWei(tto, "ether");
           })
+          await this.state.uniswapContract.methods.getAmountsOut(
+            "1000000000000000000",
+            [ oneinchContract, wethContract])
+            .call().then(async tto=>{
+            uniswapRatio = web3.utils.fromWei(tto[1], "ether");
+          })
 var ethPrice;
 var oneInchPrice;
 var oneInchEthRatio;
@@ -255,6 +263,7 @@ var oneInchEthRatio;
         this.setState({tokensMinted: tokensOutstanding});
         this.setState({collateralPosition: totalPositionCollateral});
         this.setState({minCollateral: collateralRequirement});
+        this.setState({uniswapRatio: uniswapRatio})
   
   
         this.state.wethContract.methods.balanceOf(this.state.accounts).call().then(async cfm => {
@@ -321,54 +330,42 @@ var oneInchEthRatio;
     }
   }
 
-  async depositWETH(amount){
-    await this.state.aaveContract.methods.deposit(
-      wethContract,
-      this.state.web3.utils.toWei(amount),
-      this.state.accounts,
-      '0'
-    ).send({ from: this.state.accounts})
-    .on("receipt", async (receipt)=> {
-      this.setState({error: "Congratulations! You have deposited " + amount + " wETH. You received " + amount + " aWETH" });
-    })
-    .on("error",  function(error) {
-      console.log("error: "+ error)
-    })
-  }
-  /*async longTokens(value){
-    const path = [ weeth.address,oneinch.address];
-    const to = this.state.accounts; // should be a checksummed recipient address
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
-    const valueToEth = this.state.web3.utils.toWei(value);// // needs to be converted to e.g. hex
-    await this.state.uniswapContract.methods.swapExactETHForTokens(
-      1,
-      path,
-      to,
-      deadline,
-      )
-    .send({ from: this.state.accounts, value: valueToEth})
-    .on("receipt", async (receipt)=> {
-      console.log("success!");
-    })
-    .on("error",  function(error) {
-      console.log("error: "+ error)
-    })  
+  async approveAndDepositWETH(amount){
+    await this.state.wethContract.methods.approve(aaveLendContract, "1000000000000000000000000000")
+        .send({ from: this.state.accounts})
+        .on("receipt", async (receipt)=> {
+          this.setState({error: "Approved to send wETH to Aave!"});
+           await this.state.aaveContract.methods.deposit(
+            wethContract,
+            this.state.web3.utils.toWei(amount),
+            this.state.accounts,
+            '0'
+          ).send({ from: this.state.accounts})
+          .on("receipt", async (receipt)=> {
+            this.setState({error: "Congratulations! You have deposited " + amount + " wETH. You received " + amount + " aWETH" });
+          })
+          .on("error",  function(error) {
+            console.log("error: "+ error)
+          })
+        }).on("error",  function(error) {
+          console.log("error: "+ error)
+        })
   }
 
-  async calculateEst(amount) {
-    var x;
-    if(amount !== 0){
-    await this.state.uniswapContract.methods.getAmountsOut(
-    this.state.web3.utils.toWei(amount.toString(), "ether"),
-    [wethContract,
-    oneinchContract]
-    ).call().then(async cfm=>{
-      x = this.state.web3.utils.fromWei(cfm[1], "ether");
-      console.log("reached");
-    })
-    }
+  async depositWETH(amount){
+           await this.state.aaveContract.methods.deposit(
+            wethContract,
+            this.state.web3.utils.toWei(amount),
+            this.state.accounts,
+            '0'
+          ).send({ from: this.state.accounts})
+          .on("receipt", async (receipt)=> {
+            this.setState({error: "Congratulations! You have deposited " + amount + " wETH. You received " + amount + " aWETH" });
+          })
+          .on("error",  function(error) {
+            console.log("error: "+ error)
+          })
   }
-  */
 
   async getWETH(amount){
     this.state.web3.eth.sendTransaction({
@@ -415,6 +412,10 @@ var oneInchEthRatio;
     this.longTokens(this.state.longAmt);
   }
 
+  handleApproveAndDepositWETH = (event) => {
+    this.approveAndDepositWETH(this.state.deposit);
+  }
+
   handleDepositWETH = (event) => {
     this.depositWETH(this.state.deposit);
   }
@@ -436,44 +437,39 @@ var oneInchEthRatio;
       <br></br>
       <div style = {styles2}>
       ETH: {"$" + this.state.currEthPrice}
-      &nbsp;&nbsp;&nbsp;
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       1inch: {"$" + this.state.currOneInchPrice}
-      &nbsp;&nbsp;&nbsp;
-      ETH:1inch: {this.state.currEthOneInchRatio}
       <br></br>
-      Total u1inch minted: {parseFloat(this.state.tokensMinted).toFixed(2)}
-      &nbsp;&nbsp;&nbsp;
-      Total u1inch balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
-      &nbsp;&nbsp;&nbsp;
-      Metamask u1inch balance: {parseFloat(this.state.metamaskBalance).toFixed(2)}
-      
-      {/*CollateralPosition: {this.state.collateralPosition}
-      &nbsp;&nbsp;&nbsp;
-      MinCollateralPosition: {this.state.minCollateral}
+      CoinGecko: {parseFloat(this.state.currEthOneInchRatio).toFixed(8) + " ETH per 1inch"}
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Uniswap: {parseFloat(this.state.uniswapRatio).toFixed(8) + " ETH per u1inch"}
       <br></br>
-    */}
+      u1inch minted: {parseFloat(this.state.tokensMinted).toFixed(2)}
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      u1inch balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
+      <br></br>
       <br></br>
       <text style={{fontWeight: "bold"}}>Make sure you have enough wETH in your account</text>
       <br></br>
       wETH balance: {parseFloat(this.state.metamaskWethBalance).toFixed(2)}
       <br></br>
-      Dont have wETH? wrap some here with ETH: <Input type="number" placeholder= "0" onChange={this.handleWETHChange} />
+      Dont have wETH? wrap some here: <Input type="number" style={{width:"100px"}} placeholder= "0" onChange={this.handleWETHChange} />
       &nbsp;<Button variant="contained" color="secondary" onClick={this.handleBuyWETH}>Mint WETH</Button>
       <br></br>
       <br></br>
       <text style={{fontWeight: "bold"}}>Mint u1inch</text>
       <br></br>
-      Minimum tokens mintable: {this.state.minimumTokens}
-      &nbsp;&nbsp;&nbsp;
+      Minimum tokens: {this.state.minimumTokens}
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       Minimum collateral: {this.state.numTokens* this.state.GCR}
       <br></br>
-      Token amount to mint: <Input type="number"  placeholder="100" onChange={this.handleNumTokenChange} />
+      Mint amount: <Input type="number"  style={{width:"100px"}} placeholder="100" onChange={this.handleNumTokenChange} />
       &nbsp;&nbsp;&nbsp;
-      wETH amount as collateral: <Input type="number" placeholder= {(this.state.numTokens* this.state.GCR)} onChange={this.handleNumCChange} />
-      <br></br>
-      Approve wETH and mint tokens:  <Button variant="contained" color="secondary" onClick={this.handleApproveAndMintTokens}>Approve wETH and Mint Tokens</Button>
-      &nbsp;&nbsp;&nbsp;
-      Already approved? <Button variant="contained" color="secondary" onClick={this.handleMintTokens}>Mint Tokens</Button>
+      wETH collateral amount: <Input type="number" style={{width:"100px"}} placeholder= {(this.state.numTokens* this.state.GCR)} onChange={this.handleNumCChange} />
+      &nbsp;
+      <Button variant="contained" color="secondary" onClick={this.handleApproveAndMintTokens}>Approve and Mint</Button>
+      &nbsp;
+      Already approved? <Button variant="contained" color="secondary" onClick={this.handleMintTokens}>Mint</Button>
       <br></br>
       <br></br>
       {/*}
@@ -483,16 +479,16 @@ var oneInchEthRatio;
       Amount of u1INCHwETH you will get: {this.state.estimate}
       <br></br>
     */}
-      <text style={{fontWeight: "bold"}}>Head to Uniswap to short and long u1inch!</text>
+      <text style={{fontWeight: "bold"}}>Short and long u1inch on Uniswap</text>
       <br></br>
       <Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>Add liquidity</Button> 
-      &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>SHORT or LONG: swap u1inch with other tokens</Button>
-      <br></br>
-      Total u1inch supply: {parseFloat(this.state.supply).toFixed(2)}
+      &nbsp;<Button variant="contained" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>SHORT or LONG</Button>
       <br></br>
       <br></br>
-      BONUS: After swapping, deposit some wETH to Aave: <Input type="number" placeholder= "0" onChange={this.handleDepositChange} />
-      &nbsp;<Button variant="contained" color="secondary" onClick={this.handleDepositWETH}>Deposit WETH to Aave</Button>
+      BONUS: After swapping, deposit some wETH to Aave: <Input style={{width:"100px"}} type="number" placeholder= "0" onChange={this.handleDepositChange} />
+      &nbsp;<Button variant="contained" color="secondary" onClick={this.handleApproveAndDepositWETH}>Approve and deposit</Button>
+      &nbsp;
+      Already approved? <Button variant="contained" color="secondary" onClick={this.handleDepositWETH}>Deposit</Button>
       <br></br>
       <br></br>
       <CopyToClipboard text={wethContract} onCopy={this.onCopy} >
