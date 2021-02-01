@@ -10,10 +10,15 @@
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  border-radius: 25px;
 }
 
 .App:before {
   opacity: 50%;
+}
+
+.rounded-corners {
+  border-radius: 25px;
 }
 .App-logo {
   margin-left: auto;
