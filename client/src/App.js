@@ -3,6 +3,7 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import getWeb3 from "./getWeb3.js";
 import Tokens from "./build/token.json";
 import Weth from "./build/weth.json";
+import U1inch from "./build/u1inch.json";
 import Uniswap from "./build/uniswap.json";
 import Aave from "./build/aave.json";
 import Button from '@material-ui/core/Button';
@@ -18,17 +19,6 @@ const u1inchAddress = "0x32b5f743d06b54a645f351dac79270ce74acc7af";
 const uniswapAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const aaveAddress = "0x9FE532197ad76c5a68961439604C037EB79681F0";
 const aWethAddress = "0xe2735adf49d06fbc2c09d9c0cffba5ef5ba35649";
-// The minimum ABI to get ERC20 Token balance
-let minABI = [
-  // balanceOf
-  {
-    "constant": true,
-    "inputs":[{"name":"_owner","type":"address"}],
-    "name":"balanceOf",
-    "outputs":[{"name":"balance","type":"uint256"}],
-    "type":"function"
-  },
-];
 
 class App extends Component {
   constructor(props){
@@ -46,9 +36,10 @@ class App extends Component {
      GCR: 0,
      minTokens: 0,
      numTokens: 0,
-     minCollateral: 0,
+     numTokens2: 0,
      numCollateral: 0,
-     tokenBalance: 0,
+     numCollateral2: 0,
+     tokensOutstanding: 0,
      numWeth: 0,
      supply: 0,
      metamaskBalance: 0,
@@ -60,6 +51,12 @@ class App extends Component {
      uniswapRatio: 0,
      tokensMinted: 0,
      collateralPosition: 0,
+     collateralAmount: 0,
+     totalCollateral: 0,
+     userCollateral: 0,
+     userTokens: 0,
+     userCR: 0,
+     minCollateral: 0,
    }
   }
 
@@ -87,7 +84,7 @@ class App extends Component {
       );
 
       const u1inchContract = new web3.eth.Contract(
-        minABI,
+        U1inch.abi,
         u1inchAddress,
       );
 
@@ -108,10 +105,9 @@ class App extends Component {
       });
       
       var feeMultiplier;
-      var totalPositionCollateral;
+      var totalCollateral;
       var tokensOutstanding;
       var minTokens;
-      var tokenBalance;
       var metamaskBalance;
       var metamaskWethBalance;
       var collateralRequirement;
@@ -119,37 +115,26 @@ class App extends Component {
       var currEthPrice;
       var curr1inchPrice;
       var coinGeckoRatio;
-      
-      await this.state.tokenContract.methods.cumulativeFeeMultiplier().call().then(async cfm=>{
-        feeMultiplier = web3.utils.fromWei(cfm, "ether");
-      })
-
-      await this.state.tokenContract.methods.rawTotalPositionCollateral().call().then(async rtpc=>{
-        totalPositionCollateral = web3.utils.fromWei(rtpc, "ether");
-      })
-
-      await this.state.tokenContract.methods.totalTokensOutstanding().call().then(async tto=>{
-        tokensOutstanding = web3.utils.fromWei(tto, "ether");
-      })
-      
-      await this.state.tokenContract.methods.minSponsorTokens().call().then(async mst=>{
-        minTokens = web3.utils.fromWei(mst, "ether");
-      })
-
-      await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-        tokenBalance = web3.utils.fromWei(cc.tokensOutstanding[0], "ether");
-      })
-
-      this.setState({GCR: feeMultiplier*totalPositionCollateral/tokensOutstanding});
-      this.setState({minTokens: minTokens});
-      this.setState({tokenBalance: tokenBalance});
-      
-
+      var userCollateral;
+      var userTokens;
+      var userCR;
+      var minCollateral;
       setInterval(async () => {
-        await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-          tokenBalance = web3.utils.fromWei(cc.tokensOutstanding[0], "ether");
+        await this.state.tokenContract.methods.cumulativeFeeMultiplier().call().then(async cfm=>{
+          feeMultiplier = web3.utils.fromWei(cfm, "ether");
         })
-        this.setState({tokenBalance: tokenBalance});
+        
+        await this.state.tokenContract.methods.rawTotalPositionCollateral().call().then(async rtpc=>{
+          totalCollateral = web3.utils.fromWei(rtpc, "ether");
+        })
+  
+        await this.state.tokenContract.methods.totalTokensOutstanding().call().then(async tto=>{
+          tokensOutstanding = web3.utils.fromWei(tto, "ether");
+        })
+        
+        await this.state.tokenContract.methods.minSponsorTokens().call().then(async mst=>{
+          minTokens = web3.utils.fromWei(mst, "ether");
+        })
 
         this.state.u1inchContract.methods.balanceOf(this.state.accounts).call().then(async cfm => {
           metamaskBalance = web3.utils.fromWei(cfm, "ether");
@@ -159,16 +144,13 @@ class App extends Component {
           metamaskWethBalance = web3.utils.fromWei(cfm, "ether");
         });
 
-        await this.state.tokenContract.methods.rawTotalPositionCollateral().call().then(async rtpc=>{
-          totalPositionCollateral = web3.utils.fromWei(rtpc, "ether");
-        })
-
-        await this.state.tokenContract.methods.totalTokensOutstanding().call().then(async tto=>{
-          tokensOutstanding = web3.utils.fromWei(tto, "ether");
-        })
-
         await this.state.tokenContract.methods.collateralRequirement().call().then(async tto=>{
           collateralRequirement = web3.utils.fromWei(tto, "ether");
+        })
+
+        await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async tto=>{
+          userCollateral = web3.utils.fromWei(tto.rawCollateral[0], "ether");
+          userTokens = web3.utils.fromWei(tto.tokensOutstanding[0], "ether");
         })
 
         await this.state.uniswapContract.methods.getAmountsOut(
@@ -186,18 +168,38 @@ class App extends Component {
           currEthPrice =data2.data["ethereum"].usd;
           coinGeckoRatio =data2.data["1inch"].eth;
         })
-        
+
+        this.setState({GCR: feeMultiplier*totalCollateral/tokensOutstanding});
+        this.setState({minTokens: minTokens});
+        this.setState({tokensOutstanding: tokensOutstanding});
         this.setState({metamaskBalance: metamaskBalance});
         this.setState({tokensMinted: tokensOutstanding});
-        this.setState({totalPositionCollateral: totalPositionCollateral});
+        this.setState({totalCollateral: totalCollateral});
         this.setState({collateralRequirement: collateralRequirement});
         this.setState({currEthPrice: currEthPrice});
         this.setState({curr1inchPrice: curr1inchPrice});
         this.setState({coinGeckoRatio: coinGeckoRatio});
         this.setState({uniswapRatio: uniswapRatio})
         this.setState({metamaskWethBalance: metamaskWethBalance});
+        this.setState({userCollateral: userCollateral});
+        this.setState({userTokens: userTokens});
+        if(Number.isNaN(this.state.userCollateral/this.state.userTokens)){
+          userCR = 0;
+        }else {
+          userCR =this.state.userCollateral/this.state.userTokens;
+        }
+        let minColl1 = (this.state.userCollateral + this.state.numCollateral)/(this.state.userTokens+this.state.numTokens)
+        let minColl2 = this.state.numTokens* this.state.GCR;
+        if(Number.isNaN(minColl1) || parseInt(this.state.userCollateral) === 0){
+          minCollateral = minColl2;
+        }else {
+          minCollateral = Math.min(minColl1, minColl2);
+        }
+        this.setState({userCR: userCR});
+        this.setState({minCollateral: minCollateral});
       }, 1000);
 
+ 
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -205,30 +207,80 @@ class App extends Component {
       );
       console.error(error);
     }
-  };
+  }
 
-  async approveAndMintTokens(collateral, tokenAmt){
-    if(parseInt(tokenAmt) < parseInt(this.state.minTokens)){
-      this.setState({error: "too little tokens"})
-    } else if(collateral < (this.state.numTokens* this.state.GCR) ){
-      this.setState({error: "too little collateral"})
-    } else {
-      this.setState({error: ""})
-      await this.state.wethContract.methods.approve(tokenAddress, "1000000000000000000000000000")
+  async approveWeth(){
+    await this.state.wethContract.methods.approve(tokenAddress, "1000000000000000000000000000")
+      .send({ from: this.state.accounts})
+      .on("receipt", async (receipt)=> {
+        this.setState({error: "Approved to send wETH to EMP!"});
+      }).on("error",  function(error) {
+        console.log("error: "+ error)
+      })
+  }
+
+  async approveU1inch(){
+    await this.state.u1inchContract.methods.approve(tokenAddress, "1000000000000000000000000000")
+      .send({ from: this.state.accounts})
+      .on("receipt", async (receipt)=> {
+        this.setState({error: "Approved to send u1inch to EMP!"});
+      }).on("error",  function(error) {
+        console.log("error: "+ error)
+      })
+  }
+
+  async redeemToken(tokenAmount){
+    if(parseInt(this.state.userTokens) ===0){
+      this.setState({error: "no sponsor position"})
+    }else if(tokenAmount <=0){
+      this.setState({error: "input valid amount"})
+    }else if(tokenAmount > this.state.userTokens){
+      this.setState({error: "too little token balance"})
+    }else if(this.state.userTokens !== tokenAmount &&
+      this.state.userTokens - tokenAmount < this.state.minTokens){
+      this.setState({error: "token balance below min sponsor position"})
+    }else{
+      await this.state.tokenContract.methods.redeem([this.state.web3.utils.toWei(tokenAmount)])
         .send({ from: this.state.accounts})
         .on("receipt", async (receipt)=> {
-          this.setState({error: "Approved to send wETH to EMP!"});
-          await this.state.tokenContract.methods.create([this.state.web3.utils.toWei(collateral)],[this.state.web3.utils.toWei(tokenAmt)])
-            .send({ from: this.state.accounts})
-            .on("receipt", async (receipt)=> {
-              await this.state.tokenContract.methods.positions(this.state.accounts).call().then(async cc=>{
-                this.setState({error: "Congratulations you minted " + tokenAmt + " tokens! You now have " + this.state.web3.utils.fromWei(cc.tokensOutstanding[0], "ether") + " u1INCHwETH!"});
-              })
-            })
-            .on("error",  function(error) {
-              console.log("error: "+ error)
-            })
-          })
+          this.setState({error: "You've redeemed " + tokenAmount + " u1inch"})
+        })
+        .on("error",  function(error) {
+          console.log("error: "+ error)
+        })
+    }
+  }
+
+  async depositCollateral(collateralAmount){
+    if(parseInt(this.state.userCollateral) ===0){
+      this.setState({error: "no sponsor position"})
+    }else if(collateralAmount <=0){
+      this.setState({error: "input valid amount"})
+    }else{
+      await this.state.tokenContract.methods.deposit([this.state.web3.utils.toWei(collateralAmount)])
+        .send({ from: this.state.accounts})
+        .on("receipt", async (receipt)=> {
+          this.setState({error: "You've deposited " + collateralAmount + " wETH"})
+        })
+        .on("error",  function(error) {
+          console.log("error: "+ error)
+        })
+    }
+  }
+
+  async withdrawCollateral(collateralAmount){
+    if(parseInt(this.state.userCollateral) ===0){
+      this.setState({error: "no sponsor position"})
+    }else if(collateralAmount <=0){
+      this.setState({error: "input valid amount"})
+    }else if(this.state.GCR > (this.state.userCollateral-collateralAmount)/this.state.userTokens){
+      this.setState({error: "too little collateral left"});
+    }else {
+      await this.state.tokenContract.methods.withdraw([this.state.web3.utils.toWei(collateralAmount)])
+        .send({ from: this.state.accounts})
+        .on("receipt", async (receipt)=> {
+          this.setState({error: "You've withdrawn " + collateralAmount + " wETH"})
+        })
         .on("error",  function(error) {
           console.log("error: "+ error)
         })
@@ -236,9 +288,11 @@ class App extends Component {
   }
 
   async mintTokens(collateral, tokenAmt){
-    if(parseInt(tokenAmt) < parseInt(this.state.minTokens)){
-      this.setState({error: "too little tokens"})
-    } else if(collateral < (this.state.numTokens* this.state.GCR)){
+    if(tokenAmt <=0){
+      this.setState({error: "input valid amount"})
+    } else if(parseInt(this.state.userTokens)+ parseInt(tokenAmt) < parseInt(this.state.minTokens)){
+      this.setState({error: "token amount below minimum sponsor tokens"})
+    } else if(collateral < (this.state.minCollateral)){
       this.setState({error: "too little collateral"})
     } else {
       this.setState({error: ""})
@@ -293,24 +347,31 @@ class App extends Component {
   }
 
   async getWeth(amount){
-    this.state.web3.eth.sendTransaction({
-     from: this.state.accounts, 
-     to: wethAddress, 
-     value:this.state.web3.utils.toWei(amount.toString(), "ether")
-     }).on("receipt", async (receipt)=> {
-    })
+    if(amount <=0){
+      this.setState({error: "input valid amount"})
+    }else{
+      this.state.web3.eth.sendTransaction({
+      from: this.state.accounts, 
+      to: wethAddress, 
+      value:this.state.web3.utils.toWei(amount.toString(), "ether")
+      })
+    }
   } 
 
   handleNumTokenChange = (event) =>   { 
     this.setState({numTokens: event.target.value});
   }
 
+  handleNumTokenChange2 = (event) =>   { 
+    this.setState({numTokens2: event.target.value});
+  }
+
   handleNumCollateralChange = (event) =>   { 
     this.setState({numCollateral: event.target.value});
   }
 
-  handleApproveAndMintTokens = (event) =>   { 
-    this.approveAndMintTokens(this.state.numCollateral,this.state.numTokens);
+  handleNumCollateralChange2 = (event) =>   { 
+    this.setState({numCollateral2: event.target.value});
   }
 
   handleMintTokens = (event) =>   { 
@@ -325,12 +386,24 @@ class App extends Component {
     this.setState({deposit: event.target.value});
   }
 
-  handleApproveAndDepositWeth = (event) => {
-    this.approveAndDepositWeth(this.state.deposit);
+  handleDepositCollateral = (event) => {
+    this.depositCollateral(this.state.numCollateral2);
+  }
+
+  handleWithDrawCollateral = (event) => {
+    this.withdrawCollateral(this.state.numCollateral2);
   }
 
   handleDepositWeth = (event) => {
     this.depositWeth(this.state.deposit);
+  }
+
+  handleApproveWeth = (event) => {
+    this.approveWeth();
+  }
+
+  handleApproveU1inch = (event) => {
+    this.approveU1inch();
   }
 
   handleBuyWeth = (event) => {
@@ -340,67 +413,106 @@ class App extends Component {
   handleClick = (event) => {
     this.setState({error: "copied"});
   }
+  
+  handleRedeemTokens = (event) => {
+    this.redeemToken(this.state.numTokens2);
+  }
 
   render() {
     return (
-      <div className="App" style ={{fontFamily: "Helvetica, Sans-Serif", backgroundColor: "LavenderBlush"}} > 
+      <div className="App" style ={{fontFamily: "Helvetica, Sans-Serif", 
+      '--color-1': 'cornsilk',
+      '--color-2': 'lavenderblush',
+      '--color-3': 'pink',
+      background: `
+        linear-gradient(
+          90deg,
+          var(--color-1),
+          var(--color-2),
+          var(--color-3) 
+        )
+      `,}} > 
         <div style ={{fontSize: '40px', fontWeight: "bold"}}>Mint your own synthetic 1inch! </div>
         (Expires 01/01/2022 00:00 UTC)
         <br></br><br></br>
         <div style = {{lineHeight: '2em'}}>
-          ETH: {"$" + this.state.currEthPrice}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          1inch: {"$" + this.state.curr1inchPrice}
+        <table className = "table">
+          <tr>
+            <td>ETH: <strong>{"$" + this.state.currEthPrice}</strong></td>
+            <td>CoinGecko: <strong>{parseFloat(this.state.coinGeckoRatio).toFixed(6)}</strong> ETH per 1inch</td>
+            <td>Global collateral ratio: <strong>{parseFloat(this.state.GCR).toFixed(6)}</strong></td>
+          </tr>
+          <tr>
+            <td>1inch: <strong>{"$" + this.state.curr1inchPrice}</strong></td>
+            <td>Uniswap: <strong>{parseFloat(this.state.uniswapRatio).toFixed(6)}</strong> ETH per u1inch</td>
+            <td>Your collateral ratio: <strong>{parseFloat(this.state.userCR).toFixed(6)}</strong></td>
+          </tr>
+        </table>
+          <div style = {{color: "red"}}>&nbsp;{this.state.error}&nbsp;</div>
+          <table className = "table2">
+          <tr>
+            <td>Your u1inch position: <strong>{parseFloat(this.state.userTokens).toFixed(2)}</strong></td>
+            <td> wETH balance: <strong>{parseFloat(this.state.metamaskWethBalance).toFixed(2)}</strong></td>
+          </tr>
+          <tr>
+            <td>Collateral position: <strong>{parseFloat(this.state.userCollateral).toFixed(6)}</strong></td>
+            <td> Dont have wETH? wrap some here: &nbsp;
+            <Input type="number" style={{width:"70px", height:"20px"}} placeholder= "0" onChange={this.handleWethChange}/> 
+            </td>
+          </tr>
+          <tr>
+            <td>Minimum u1inch tokens: <strong>{this.state.minTokens}</strong></td>
+            <td><Button style={{ borderRadius: 100, height: 30 }} variant="outlined" color="secondary" onClick={this.handleBuyWeth}>Mint WETH</Button></td>
+          </tr>
+          </table>
           <br></br>
-          CoinGecko: {parseFloat(this.state.coinGeckoRatio).toFixed(6) + " ETH per 1inch"}
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          Uniswap: {parseFloat(this.state.uniswapRatio).toFixed(6) + " ETH per u1inch"}
+          <table className = "table3">
+          <tr>
+            <td style={{fontWeight: "bold", textAlign: "center"}}>Mint u1inch</td>
+            <td style={{fontWeight: "bold", textAlign: "center"}}>Deposit/Withdraw Collateral</td>
+            <td style={{fontWeight: "bold", textAlign: "center"}}>Redeem u1inch</td>
+          </tr>
+          <tr>
+            <td>u1inch: <Input type="number"  style={{width:"70px", height:"20px"}} placeholder="0" onChange={this.handleNumTokenChange}/>&nbsp;
+            wETH: <Input type="number" style={{width:"70px", height:"20px"}} placeholder= {this.state.minCollateral} onChange={this.handleNumCollateralChange}/>
+            </td>
+            <td>wETH: <Input type="number" style={{width:"70px", height:"20px"}} placeholder= "0" onChange={this.handleNumCollateralChange2}/></td>
+            <td>u1inch: <Input type="number"  style={{width:"70px", height:"20px"}} placeholder="0" onChange={this.handleNumTokenChange2}/></td>
+          </tr>
+          <tr>
+            <td><Button style={{ borderRadius: 100, height: 30 }} title ="approve wETH before using as collateral" variant="outlined" color="secondary" onClick={this.handleApproveWeth}>Approve wETH</Button>&nbsp;
+            <Button style={{ borderRadius: 100, height: 30 }} title ="approve wETH before using as collateral" variant="outlined" color="secondary" onClick={this.handleMintTokens}>Mint u1inch</Button></td>
+            <td><Button style={{ borderRadius: 100, height: 30 }} title ="deposit collateral to increase collateral position" variant="outlined" color="secondary" onClick={this.handleDepositCollateral}>Deposit</Button>&nbsp;
+            <Button style={{ borderRadius: 100, height: 30 }} title ="withdraw collateral to decrease collateral position"variant="outlined" color="secondary" onClick={this.handleWithDrawCollateral}>Withdraw</Button>
+            </td>
+            <td><Button style={{ borderRadius: 100, height: 30 }} title ="approve u1inch to enable redeeming" variant="outlined" color="secondary" onClick={this.handleApproveU1inch}>Approve u1inch</Button>&nbsp;
+            <Button style={{ borderRadius: 100, height: 30  }} title ="redeem u1inch to get back wETH" variant="outlined" color="secondary" onClick={this.handleRedeemTokens}>Redeem</Button>
+            </td>
+          </tr>
+        </table>
           <br></br>
-          u1inch balance: {parseFloat(this.state.tokenBalance).toFixed(2)}
-          <br></br><br></br>
-          <text style={{fontWeight: "bold"}}>Make sure you have enough wETH in your account</text>
-          <br></br>
-          wETH balance: {parseFloat(this.state.metamaskWethBalance).toFixed(2)}
-          <br></br>
-          Dont have wETH? wrap some here: &nbsp;
-          <Input type="number" style={{width:"100px", height:"20px"}} placeholder= "0" onChange={this.handleWethChange}/> &nbsp;
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleBuyWeth}>Mint WETH</Button>
-          <br></br><br></br>
-          <text style={{fontWeight: "bold"}}>Mint u1inch</text>
-          <br></br>
-          Minimum tokens: {this.state.minTokens}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          Minimum collateral: {this.state.numTokens* this.state.GCR}
-          <br></br>
-          Mint amount:&nbsp;
-          <Input type="number"  style={{width:"100px", height:"20px"}} placeholder="100" onChange={this.handleNumTokenChange}/> &nbsp;
-          wETH collateral amount: &nbsp;
-          <Input type="number" style={{width:"100px", height:"20px"}} placeholder= {(this.state.numTokens*this.state.GCR)} onChange={this.handleNumCollateralChange} />
-          <br></br>
-          <Button style={{ borderRadius: 100 }}variant="outlined" color="secondary" onClick={this.handleApproveAndMintTokens}>Approve and Mint</Button> &nbsp;
-          Already approved?&nbsp;
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleMintTokens}>Mint</Button>
-          <br></br><br></br>
           <text style={{fontWeight: "bold"}}>Short and long u1inch on Uniswap</text>
           <br></br>
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>Add liquidity</Button>&nbsp;
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>SHORT or LONG</Button>
+          <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" target="_blank" href={"https://app.uniswap.org/#/add/0x32B5F743D06B54A645f351DAC79270Ce74aCc7af/ETH"}>Add liquidity</Button>&nbsp;
+          <Button style={{ borderRadius: 100, height: 30 }} variant="outlined" color="secondary" target="_blank" href={"https://app.uniswap.org/#/swap"}>SHORT or LONG</Button>
           <br></br><br></br>
           BONUS: After swapping, deposit some wETH to Aave: &nbsp;
-          <Input style={{width:"100px", height:"20px"}} type="number" placeholder= "0" onChange={this.handleDepositChange} />
+          <Input style={{width:"70px", height:"20px"}} type="number" placeholder= "0" onChange={this.handleDepositChange} />
           <br></br>
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleApproveAndDepositWeth}>Approve and deposit</Button>&nbsp;
+          <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" onClick={this.handleApproveAndDepositWeth}>Approve and deposit</Button>&nbsp;
           Already approved? &nbsp;
-          <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleDepositWeth}>Deposit</Button>
+          <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" onClick={this.handleDepositWeth}>Deposit</Button>
           <br></br><br></br>
           <CopyToClipboard text={wethAddress} onCopy={this.onCopy} >
-            <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleClick}>copy wETH address</Button>
+            <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" onClick={this.handleClick}>copy wETH address</Button>
           </CopyToClipboard>&nbsp; 
           <CopyToClipboard text={u1inchAddress} onCopy={this.onCopy}>
-            <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleClick}>copy u1inch address</Button>
+            <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" onClick={this.handleClick}>copy u1inch address</Button>
           </CopyToClipboard>&nbsp; 
           <CopyToClipboard text={aWethAddress} onCopy={this.onCopy}>
-            <Button style={{ borderRadius: 100 }} variant="outlined" color="secondary" onClick={this.handleClick}>copy awETH address</Button>
+            <Button style={{ borderRadius: 100, height: 30  }} variant="outlined" color="secondary" onClick={this.handleClick}>copy awETH address</Button>
           </CopyToClipboard>
-          <div style = {{color: "red"}}>{this.state.error}</div>
+          
         </div>
       </div>
       

@@ -2,7 +2,7 @@
   padding: 10px;
   text-align: center;
   height:100vh; 
-  width:100%;
+  width: 100vw;
   background-repeat: no-repeat; 
   background-position: center center;
   background-attachment: fixed;
@@ -10,7 +10,6 @@
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
-  border-radius: 25px;
 }
 
 .App:before {
@@ -28,6 +27,38 @@
   text-align: center
 }
 
+.table {
+  table-layout: fixed ;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  width: 80vw;
+}
+
+.table2 {
+  table-layout: fixed ;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  width: 60vw;
+}
+
+.table3 {
+  table-layout: fixed ;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  width: 80vw;
+}
+
+.headers {
+  text-align: center;
+}
+
+.td {
+  text-align: center;
+  width: 26.6vw;
+}
 .App-header {
   margin-left: auto;
   margin-right: auto;
@@ -41,27 +72,11 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
-.pokemon1{
-  background-color: white;
-}
 
 .header{
   font-size: 50px;
 }
 
-.pokemon2{
-  background-color: white;
-}
-.table{
-  background-color: white;
-  margin-left: auto;
-  margin-right: auto;
-}
-.table2{
-  background-color: white;
-  margin-left: auto;
-  margin-right: auto;
-}
 .App-link {
   text-align: center;
 }
