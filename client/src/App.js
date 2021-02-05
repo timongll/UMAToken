@@ -236,9 +236,7 @@ class App extends Component {
     if(parseInt(this.state.userTokens) ===0){
       this.setState({error: "no sponsor position"})
     }else if(tokenAmount <=0){
-      this.setState({error: "input valid amount"})
-    }else if(tokenAmount > this.state.userTokens){
-      this.setState({error: "too little token balance"})
+      this.setState({error: "input valid amount"})  
     }else if(this.state.userTokens !== tokenAmount &&
       this.state.userTokens - tokenAmount < this.state.minTokens){
       this.setState({error: "token balance below min sponsor position"})
@@ -255,7 +253,7 @@ class App extends Component {
   }
 
   async depositCollateral(collateralAmount){
-    if(parseInt(this.state.userCollateral) ===0){
+    if(this.state.userCollateral ===0){
       this.setState({error: "no sponsor position"})
     }else if(collateralAmount <=0){
       this.setState({error: "input valid amount"})
@@ -272,7 +270,7 @@ class App extends Component {
   }
 
   async withdrawCollateral(collateralAmount){
-    if(parseInt(this.state.userCollateral) ===0){
+    if(this.state.userCollateral ===0){
       this.setState({error: "no sponsor position"})
     }else if(collateralAmount <=0){
       this.setState({error: "input valid amount"})
@@ -395,6 +393,10 @@ class App extends Component {
 
   handleWithDrawCollateral = (event) => {
     this.withdrawCollateral(this.state.numCollateral2);
+  }
+
+  handleApproveAndDepositWeth = (event) => {
+    this.approveAndDepositWeth(this.state.deposit);
   }
 
   handleDepositWeth = (event) => {
