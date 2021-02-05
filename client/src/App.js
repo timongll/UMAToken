@@ -119,6 +119,7 @@ class App extends Component {
       var userTokens;
       var userCR;
       var minCollateral;
+
       setInterval(async () => {
         await this.state.tokenContract.methods.cumulativeFeeMultiplier().call().then(async cfm=>{
           feeMultiplier = web3.utils.fromWei(cfm, "ether");
@@ -183,11 +184,13 @@ class App extends Component {
         this.setState({metamaskWethBalance: metamaskWethBalance});
         this.setState({userCollateral: userCollateral});
         this.setState({userTokens: userTokens});
+
         if(Number.isNaN(this.state.userCollateral/this.state.userTokens)){
           userCR = 0;
         }else {
           userCR =this.state.userCollateral/this.state.userTokens;
         }
+
         let minColl1 = (this.state.userCollateral + this.state.numCollateral)/(this.state.userTokens+this.state.numTokens)
         let minColl2 = this.state.numTokens* this.state.GCR;
         if(Number.isNaN(minColl1) || parseInt(this.state.userCollateral) === 0){
@@ -481,7 +484,7 @@ class App extends Component {
           </tr>
           <tr>
             <td><Button style={{ borderRadius: 100, height: 30 }} title ="approve wETH before using as collateral" variant="outlined" color="secondary" onClick={this.handleApproveWeth}>Approve wETH</Button>&nbsp;
-            <Button style={{ borderRadius: 100, height: 30 }} title ="approve wETH before using as collateral" variant="outlined" color="secondary" onClick={this.handleMintTokens}>Mint u1inch</Button></td>
+            <Button style={{ borderRadius: 100, height: 30 }} title ="mint u1inch using wETH as collateral" variant="outlined" color="secondary" onClick={this.handleMintTokens}>Mint u1inch</Button></td>
             <td><Button style={{ borderRadius: 100, height: 30 }} title ="deposit collateral to increase collateral position" variant="outlined" color="secondary" onClick={this.handleDepositCollateral}>Deposit</Button>&nbsp;
             <Button style={{ borderRadius: 100, height: 30 }} title ="withdraw collateral to decrease collateral position"variant="outlined" color="secondary" onClick={this.handleWithDrawCollateral}>Withdraw</Button>
             </td>
