@@ -1,6 +1,6 @@
 # UMA Synthetic 1inch tokens 
 
-## Mint u1inch tokens using wETH as collateral. Short and long the tokens on UNiswap
+Mint u1inch tokens using wETH as collateral. Short and long the tokens on Uniswap
 
 
 ## Start App
